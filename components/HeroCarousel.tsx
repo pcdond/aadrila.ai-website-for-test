@@ -21,7 +21,7 @@ const AUTO_DELAY = 3;
 const HeroCarousel = () => {
   const slidesRef = useRef<HTMLDivElement[]>([]);
   const activeIndex = useRef(0);
-  const autoplayRef = useRef<gsap.DelayedCall | null>(null);
+  const autoplayRef = useRef<gsap.delayedCall | null>(null);
   const dragProxy = useRef<HTMLDivElement | null>(null);
 
   const total = images.length;
