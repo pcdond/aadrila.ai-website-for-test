@@ -2,10 +2,6 @@
 
 import { useEffect, useRef } from "react";
 import Image from "next/image";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-
-gsap.registerPlugin(ScrollTrigger);
 
 const products = [
   {
@@ -38,77 +34,99 @@ export default function Products() {
   const sectionRef = useRef<HTMLElement | null>(null);
   const titleRef = useRef<HTMLDivElement | null>(null);
   const dotRef = useRef<HTMLDivElement | null>(null);
-  const productRefs = useRef<HTMLDivElement[]>([]);
+  const productRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
     if (!sectionRef.current) return;
 
-    const ctx = gsap.context(() => {
-      // Dot box from left
-      gsap.from(dotRef.current, {
-        x: -100,
-        opacity: 0,
-        duration: 0.8,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: "top 80%",
-          once: true,
-        },
-      });
+    let ctx: any;
 
-      // Section title from top
-      gsap.from(titleRef.current, {
-        y: -60,
-        opacity: 0,
-        duration: 0.8,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: "top 78%",
-          once: true,
-        },
-      });
+    const initGsap = async () => {
+      const gsapModule = await import("gsap");
+      const scrollTriggerModule = await import("gsap/ScrollTrigger");
 
-      // Each product animation
-      productRefs.current.forEach((product) => {
-        const text = product.querySelector(".product-text");
-        const image = product.querySelector(".product-image");
-        const circle = product.querySelector(".product-circle");
+      const gsap = gsapModule.default;
+      const ScrollTrigger = scrollTriggerModule.ScrollTrigger;
 
-        const reverse = product.classList.contains("reverse");
+      gsap.registerPlugin(ScrollTrigger);
 
-        gsap.from(text, {
-          x: reverse ? 120 : -120,
-          opacity: 0,
-          duration: 1,
-          ease: "power3.out",
-          scrollTrigger: {
-            trigger: product,
-            start: "top 75%",
-            once: true,
-          },
+      ctx = gsap.context(() => {
+        if (dotRef.current) {
+          gsap.from(dotRef.current, {
+            x: -100,
+            opacity: 0,
+            duration: 0.8,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: sectionRef.current,
+              start: "top 80%",
+              once: true,
+            },
+          });
+        }
+
+        if (titleRef.current) {
+          gsap.from(titleRef.current, {
+            y: -60,
+            opacity: 0,
+            duration: 0.8,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: sectionRef.current,
+              start: "top 78%",
+              once: true,
+            },
+          });
+        }
+
+        productRefs.current.forEach((product) => {
+          if (!product) return;
+
+          const text = product.querySelector(".product-text");
+          const image = product.querySelector(".product-image");
+          const circle = product.querySelector(".product-circle");
+          const reverse = product.classList.contains("reverse");
+
+          if (text) {
+            gsap.from(text, {
+              x: reverse ? 120 : -120,
+              opacity: 0,
+              duration: 1,
+              ease: "power3.out",
+              scrollTrigger: {
+                trigger: product,
+                start: "top 75%",
+                once: true,
+              },
+            });
+          }
+
+          if (image || circle) {
+            gsap.from([image, circle].filter(Boolean), {
+              x: reverse ? -120 : 120,
+              opacity: 0,
+              duration: 1,
+              ease: "power3.out",
+              scrollTrigger: {
+                trigger: product,
+                start: "top 75%",
+                once: true,
+              },
+            });
+          }
         });
+      }, sectionRef);
+    };
 
-        gsap.from([image, circle], {
-          x: reverse ? -120 : 120,
-          opacity: 0,
-          duration: 1,
-          ease: "power3.out",
-          scrollTrigger: {
-            trigger: product,
-            start: "top 75%",
-            once: true,
-          },
-        });
-      });
-    }, sectionRef);
+    initGsap();
 
-    return () => ctx.revert();
+    return () => {
+      if (ctx) ctx.revert();
+    };
   }, []);
 
   return (
-    <section ref={sectionRef} className="relative bg-white text-dark  ">
+    <section ref={sectionRef} className="relative bg-white text-dark">
       {/* Dot box */}
       <div ref={dotRef} className="absolute left-10 top-10">
         <Image
@@ -130,7 +148,7 @@ export default function Products() {
         {products.map((product, index) => (
           <div
             key={product.id}
-            ref={(el) => el && (productRefs.current[index] = el)}
+            ref={(el) => (productRefs.current[index] = el)}
             className={`relative mx-auto max-w-7xl grid lg:grid-cols-2 gap-16 items-center ${
               product.reverse ? "reverse" : ""
             }`}
